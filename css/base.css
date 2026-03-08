@@ -1,0 +1,76 @@
+/*
+ * base.css
+ * Global reset, body, layout, scrollbar
+ */
+
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html { font-size: 14px; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--base);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.55;
+  overflow-x: hidden;
+}
+
+/* ── Background Texture ─────────────────────────────────────────────────────── */
+/* Dot grid */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(circle, rgba(0,102,255,0.055) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+/* Ambient glow corner */
+body::after {
+  content: '';
+  position: fixed; top: -180px; left: -180px;
+  width: 550px; height: 550px;
+  background: radial-gradient(circle, rgba(0,102,255,0.07) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── App Wrapper ─────────────────────────────────────────────────────────────── */
+.app {
+  position: relative; z-index: 1;
+  max-width: 1460px;
+  margin: 0 auto;
+  padding: var(--sp-6) var(--sp-5);
+}
+
+/* ── Two-column Layout ──────────────────────────────────────────────────────── */
+.two-col {
+  display: grid;
+  grid-template-columns: 315px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 920px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+
+/* ── Utility: Hidden ─────────────────────────────────────────────────────────── */
+.hidden { display: none !important; }
+
+/* ── Divider ─────────────────────────────────────────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: var(--sp-4) 0;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--base); }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
