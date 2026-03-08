@@ -1,0 +1,62 @@
+/*
+ * theme.css
+ * QuantFolio Design Tokens
+ * Theme: Tech Innovation × Midnight Galaxy
+ * Source: /mnt/skills/examples/theme-factory/themes/
+ *
+ * Tech Innovation  → Electric Blue #0066ff, Neon Cyan #00ffff, Dark #1e1e1e
+ * Midnight Galaxy  → Deep Purple #2b1e3e, Cosmic Blue #4a4e8f, Silver #e6e6fa
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── Design Tokens ─────────────────────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --base:      #0b0c1a;   /* deep space base */
+  --surface:   #11142b;   /* card surface */
+  --surface-2: #171a35;   /* nested surfaces */
+
+  /* Borders */
+  --border:    #1d2140;
+  --border-2:  #252a55;
+
+  /* Brand Accents — Tech Innovation palette */
+  --blue:      #0066ff;
+  --cyan:      #00ffff;
+
+  /* Supporting — Midnight Galaxy palette */
+  --lavender:  #a490c2;
+  --silver:    #e6e6fa;
+
+  /* Semantic colors */
+  --green:     #00e5a0;
+  --red:       #ff3366;
+  --amber:     #ffb833;
+
+  /* Text */
+  --text:      #dde0f5;
+  --muted:     #525880;
+  --dim:       #2e3258;
+
+  /* Typography */
+  --font-body: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+
+  /* Border radius */
+  --r-sm: 5px;
+  --r-md: 9px;
+  --r-lg: 13px;
+
+  /* Glows */
+  --glow-cyan: 0 0 18px rgba(0, 255, 255, 0.18);
+  --glow-blue: 0 0 18px rgba(0, 102, 255, 0.22);
+}
