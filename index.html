@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuantFolio — Portfolio Optimizer</title>
+
+  <!--
+    QuantFolio — Portfolio Optimization Engine
+    ==========================================
+    Theme   : Tech Innovation × Midnight Galaxy
+              /mnt/skills/examples/theme-factory/themes/
+
+    File structure:
+      index.html          ← this file (markup only)
+      css/theme.css       ← design tokens / CSS variables
+      css/base.css        ← reset, layout, body
+      css/components.css  ← buttons, inputs, cards, sliders, tabs
+      css/results.css     ← metrics, charts, overlay, allocation
+      js/api.js           ← Twelve Data API + symbol search
+      js/quant.js         ← covariance, portfolio math, 6 strategies
+      js/charts.js        ← all Chart.js rendering
+      js/main.js          ← UI controller, run pipeline, DOM wiring
+  -->
+
+  <!-- Stylesheets (order matters: tokens → reset → components → results) -->
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/results.css" />
+
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" defer></script>
+
+  <!-- App modules (order: api → quant → charts → main) -->
+  <script src="js/api.js"    defer></script>
+  <script src="js/quant.js"  defer></script>
+  <script src="js/charts.js" defer></script>
+  <script src="js/main.js"   defer></script>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── HEADER ─────────────────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-name">Quant<span>Folio</span></div>
+      <div class="brand-tag">Portfolio Optimizer</div>
+    </div>
+    <div class="header-right">
+      <div class="api-indicator">
+        <span class="api-dot" id="apiDot"></span>
+        <span id="apiLabel">API NOT CONFIGURED</span>
+      </div>
+      <div class="header-sub">TWELVE DATA · MARKOWITZ · MONTE CARLO</div>
+    </div>
+  </header>
+
+  <!-- ── TWO-COLUMN LAYOUT ───────────────────────────────────────────────── -->
+  <div class="two-col">
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         LEFT COLUMN — Configuration
+         ════════════════════════════════════════════════════════════════════ -->
+    <div class="left-col">
+
+      <!-- API Key Setup -->
+      <div class="card">
+        <div class="card-title">API Configuration</div>
+
+        <div class="notice info">
+          1. Go to <a href="https://twelvedata.com" target="_blank" style="color:var(--cyan)">twelvedata.com</a>
+             → click <strong>Get API Key</strong><br>
+          2. Sign up free — key shown on dashboard instantly<br>
+          3. Free tier: <strong>800 req/day · 8 req/min</strong> · No credit card
+        </div>
+
+        <div class="row">
+          <input type="text" id="keyInput" placeholder="Paste your Twelve Data API key" />
+          <button class="btn" onclick="saveApiKey()">SAVE</button>
+        </div>
+        <div class="key-status" id="keyStatus">No key configured</div>
+      </div>
+
+      <!-- Stock Selection -->
+      <div class="card">
+        <div class="card-title">Stock Selection</div>
+
+        <!-- Ticker input -->
+        <div class="row">
+          <input type="text" id="tickerInput" placeholder="Add ticker e.g. AAPL" style="text-transform:uppercase" />
+          <button class="btn" onclick="addTicker()">ADD</button>
+        </div>
+        <div class="tags" id="tags"></div>
+
+        <!-- Quick presets -->
+        <div class="section-label">Quick Presets</div>
+        <div class="presets">
+          <button class="btn-preset" onclick="setPreset(['AAPL','MSFT','GOOGL','NVDA','META'])">TECH</button>
+          <button class="btn-preset" onclick="setPreset(['SPY','AGG','GLD','JNJ','JPM'])">BALANCED</button>
+          <button class="btn-preset" onclick="setPreset(['AAPL','MSFT','GOOGL','META','AMZN','NVDA','TSLA'])">MAG-7</button>
+          <button class="btn-preset" onclick="setPreset(['SPY','QQQ','VTI','AGG','GLD'])">ETF MIX</button>
+          <button class="btn-preset" onclick="setPreset(['JPM','BAC','GS','V','BRK-B'])">FINANCE</button>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- Symbol search -->
+        <div class="section-label">🔍 Symbol Lookup</div>
+        <div class="row">
+          <input type="text" id="searchInput" placeholder="Search e.g. Reliance, Tesla..." style="text-transform:none" />
+          <button class="btn" onclick="searchSymbol()">FIND</button>
+        </div>
+        <div id="searchResults" style="font-family:var(--font-mono);font-size:0.62rem;color:var(--muted);margin-bottom:12px;min-height:18px;line-height:1.8"></div>
+
+        <hr class="divider" />
+
+        <!-- Notices -->
+        <div class="notice warning">
+          <strong>⚠ Free Tier Limitations</strong><br>
+          Not all tickers are available — US stocks (NYSE/NASDAQ) are most reliable.
+          A 404 error means the symbol requires a paid plan.<br><br>
+          <strong>🇮🇳 Indian Stocks (NSE/BSE)</strong><br>
+          Use format: <span class="hl">SYMBOL:NSE</span> or <span class="hl">SYMBOL:BSE</span><br>
+          Examples: <span class="hl">TCS:NSE</span> · <span class="hl">RELIANCE:NSE</span><br>
+          Indian stocks may require a paid plan.
+        </div>
+
+        <hr class="divider" />
+
+        <!-- Sliders -->
+        <div class="slider-group">
+          <div class="slider-label">Historical Data Window <span id="yrLbl">10 yrs</span></div>
+          <input type="range" id="yrSlider" min="1" max="20" step="1" value="10"
+            oninput="updateSliderLabel('yrSlider','yrLbl', v => v + ' yr' + (v > 1 ? 's' : ''))" />
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">Monte Carlo Simulations <span id="mcLbl">10,000</span></div>
+          <input type="range" id="mcSlider" min="2000" max="30000" step="1000" value="10000"
+            oninput="updateSliderLabel('mcSlider','mcLbl', v => parseInt(v).toLocaleString())" />
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">Risk-Free Rate <span id="rfrLbl">4.5%</span></div>
+          <input type="range" id="rfrSlider" min="0" max="10" step="0.1" value="4.5"
+            oninput="updateSliderLabel('rfrSlider','rfrLbl', v => parseFloat(v).toFixed(1) + '%')" />
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">Investment Horizon <span id="hrzLbl">5 yrs</span></div>
+          <input type="range" id="hrzSlider" min="1" max="30" step="1" value="5"
+            oninput="updateSliderLabel('hrzSlider','hrzLbl', v => v + ' yr' + (v > 1 ? 's' : ''))" />
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">Initial Capital <span id="capLbl">$100,000</span></div>
+          <input type="range" id="capSlider" min="10000" max="1000000" step="10000" value="100000"
+            oninput="updateSliderLabel('capSlider','capLbl', v => '$' + parseInt(v).toLocaleString())" />
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">Max Single Asset Weight <span id="mwLbl">40%</span></div>
+          <input type="range" id="mwSlider" min="10" max="100" step="5" value="40"
+            oninput="updateSliderLabel('mwSlider','mwLbl', v => v + '%')" />
+        </div>
+
+        <button class="btn-primary" id="runBtn" onclick="runAll()">
+          ⚡ FETCH DATA &amp; OPTIMIZE
+        </button>
+      </div>
+
+      <!-- Fetch Status (shown after run) -->
+      <div class="card hidden" id="statusCard">
+        <div class="card-title">Data Fetch Status</div>
+        <div class="status-list" id="statusList"></div>
+      </div>
+
+      <!-- Optimal Allocation (shown after run) -->
+      <div class="card hidden" id="allocCard">
+        <div class="card-title">Optimal Allocation</div>
+        <div id="allocBars"></div>
+        <div class="ev-block">
+          <div class="ev-label">
+            PROJECTED VALUE IN <span id="evHorizon">5</span> YEARS
+          </div>
+          <div class="ev-value" id="evValue">—</div>
+          <div class="ev-note" id="evNote"></div>
+        </div>
+      </div>
+
+    </div><!-- /left-col -->
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         RIGHT COLUMN — Results
+         ════════════════════════════════════════════════════════════════════ -->
+    <div class="right-col">
+
+      <!-- Empty state (shown before first run) -->
+      <div class="card" id="emptyState">
+        <div class="empty-state">
+          <div class="empty-icon">📡</div>
+          <div class="empty-text">
+            CONFIGURE API KEY · ADD TICKERS<br>
+            HIT RUN TO FETCH REAL MARKET DATA<br>
+            AND OPTIMIZE YOUR PORTFOLIO
+          </div>
+        </div>
+      </div>
+
+      <!-- Results section (hidden until first run) -->
+      <div id="resultsSection" class="hidden">
+
+        <!-- Metrics -->
+        <div class="card">
+          <div class="card-title">
+            Optimal Portfolio — Max Sharpe
+            <span class="data-range" id="dataRange"></span>
+          </div>
+          <div class="metrics-grid" id="metricsGrid"></div>
+        </div>
+
+        <!-- Strategy Comparison -->
+        <div class="card">
+          <div class="card-title">Strategy Comparison — All 6 Methods</div>
+          <div class="strategy-grid" id="strategyGrid"></div>
+        </div>
+
+        <!-- Charts panel -->
+        <div class="card" style="position:relative">
+          <div class="card-title">Analysis</div>
+
+          <!-- Tab bar -->
+          <div class="tabs">
+            <div class="tab active" onclick="switchTab('frontier', this)">Frontier</div>
+            <div class="tab"        onclick="switchTab('weights',  this)">Weights</div>
+            <div class="tab"        onclick="switchTab('corr',     this)">Correlation</div>
+            <div class="tab"        onclick="switchTab('growth',   this)">Growth</div>
+            <div class="tab"        onclick="switchTab('prices',   this)">Prices</div>
+          </div>
+
+          <!-- Tab panes -->
+          <div id="tab-frontier">
+            <div class="chart-container">
+              <canvas id="frontierChart"></canvas>
+            </div>
+          </div>
+
+          <div id="tab-weights" class="hidden">
+            <div class="chart-container-sm">
+              <canvas id="weightsChart"></canvas>
+            </div>
+          </div>
+
+          <div id="tab-corr" class="hidden">
+            <div class="corr-scroll" id="corrContainer"></div>
+          </div>
+
+          <div id="tab-growth" class="hidden">
+            <div class="chart-container">
+              <canvas id="growthChart"></canvas>
+            </div>
+          </div>
+
+          <div id="tab-prices" class="hidden">
+            <div class="chart-container">
+              <canvas id="pricesChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Loading overlay (positioned over chart panel) -->
+          <div class="loading-overlay" id="loadingOverlay">
+            <div class="spinner"></div>
+            <div class="loading-msg" id="loadingMsg">FETCHING DATA</div>
+            <div class="loading-sub" id="loadingSub">Please wait...</div>
+          </div>
+
+        </div><!-- /charts panel -->
+
+      </div><!-- /resultsSection -->
+
+    </div><!-- /right-col -->
+
+  </div><!-- /two-col -->
+
+</div><!-- /app -->
+</body>
+</html>

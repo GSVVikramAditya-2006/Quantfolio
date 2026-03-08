@@ -1,0 +1,21 @@
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local env / secrets (never commit API keys)
+.env
+.env.local
+*.key
+
+# Logs
+*.log
+
+# Optional local server artifacts
+node_modules/
